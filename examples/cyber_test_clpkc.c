@@ -1,0 +1,182 @@
+// Create by Gerryfan
+// Copyright 2025 China Automotive Research Software Evaluating Co., Ltd.
+//
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "cyber_pki.h"
+#include "cyber_error.h"
+#include "../src/crypto/clpkc/clpkc.h"
+
+void hex_dump_log(const char *title, const unsigned char *c, unsigned int size) 
+{
+    printf("%s: len = %d\n", title, size);
+    int i;
+    for(i = 0; i < size; i++) 
+    {
+        printf("0x%02x,",c[i]);  
+        if((i>0 ) &&(i%16 ==0))
+        {
+            printf("\n");
+        }
+    }
+    printf("\n");
+}
+
+#define CHECK_RET(ret) if (ret != 0) {printf("Error at line %d, ret = %d\n", __LINE__, ret); return ret;}
+
+int main(int argc, char *argv[]) {
+    unsigned char masterPublicKey[256] = {0};
+    unsigned int masterPublicKeyLen = sizeof(masterPublicKey);
+    unsigned char masterPrivateKey[256] = {0};
+    unsigned int masterPrivateKeyLen = sizeof(masterPrivateKey);
+    int flag = 0;
+    if(argc > 1)
+    {
+        flag = atoi(argv[1]);
+    }
+    int ret = 0;
+    unsigned char userPrivateKey[256];
+    unsigned int userPrivateKeyLen = sizeof(userPrivateKey);
+    #if 0
+    // 生成系统主密钥对
+    ret = CY_CLPKCGenMasterKeyPair(masterPublicKey, &masterPublicKeyLen, masterPrivateKey, &masterPrivateKeyLen);
+    CHECK_RET(ret);
+    cy_hex_dump("masterPublicKey", masterPublicKey, masterPublicKeyLen);
+    cy_hex_dump("masterPrivateKey", masterPrivateKey, masterPrivateKeyLen);
+    // 生成用户部分密钥对
+    unsigned char partPublicKey[256];
+    unsigned int partPublicKeyLen = sizeof(partPublicKey);
+    unsigned char partPrivateKey[256];
+    unsigned int partPrivateKeyLen = sizeof(partPrivateKey);
+    ret = CY_CLPKCGenUserPartKeyPair(partPublicKey, &partPublicKeyLen, partPrivateKey, &partPrivateKeyLen);
+    CHECK_RET(ret);
+    cy_hex_dump("partPublicKey", partPublicKey, partPublicKeyLen);
+    cy_hex_dump("partPrivateKey", partPrivateKey, partPrivateKeyLen);
+    // 生成用户密钥还原数据
+    unsigned char userID[] = "Alice";
+    unsigned int userIDLen = strlen((char*)userID);
+    unsigned char keyReconstructionDataTa[256];
+    unsigned int keyReconstructionDataTaLen = sizeof(keyReconstructionDataTa);
+    unsigned char keyReconstructionDataWa[256];
+    unsigned int keyReconstructionDataWaLen = sizeof(keyReconstructionDataWa);
+    ret = CY_CLPKCGenUserKeyReconstructionData(masterPublicKey, masterPublicKeyLen, masterPrivateKey, masterPrivateKeyLen, partPublicKey, partPublicKeyLen, userID, userIDLen, keyReconstructionDataTa, &keyReconstructionDataTaLen, keyReconstructionDataWa, &keyReconstructionDataWaLen);
+    CHECK_RET(ret);
+    cy_hex_dump("===>>>keyReconstructionDataTa", keyReconstructionDataTa, keyReconstructionDataTaLen);
+    cy_hex_dump("===>>>keyReconstructionDataWa", keyReconstructionDataWa, keyReconstructionDataWaLen);
+    // 生成用户密钥对
+    unsigned char userPrivateKey[256];
+    unsigned int userPrivateKeyLen = sizeof(userPrivateKey);
+    ret = CY_CLPKCGenUserKeyPair(keyReconstructionDataTa, keyReconstructionDataTaLen, keyReconstructionDataWa, 
+                    keyReconstructionDataWaLen, partPrivateKey, partPrivateKeyLen, userID, userIDLen, masterPublicKey, 
+                    masterPublicKeyLen, userPrivateKey, &userPrivateKeyLen);
+    CHECK_RET(ret);
+    //cy_hex_dump("===>>>userPrivateKey", userPrivateKey, userPrivateKeyLen);
+    hex_dump_log("===>>>userPrivateKey", userPrivateKey, userPrivateKeyLen);
+    #endif 
+    // 签名
+    #if 0
+    unsigned char hashZa[256];
+    unsigned int hashZaLen = 0; // 假设杂凑值为空
+    unsigned char extendedMessage[14] = {0x6D,0x65,0x73,0x73,0x61,0x67,0x65,0x20,0x64,0x69,0x67,0x65,0x73,0x74};
+    unsigned int extendedMessageLen = 14;
+    unsigned char signature[256];
+    unsigned int signatureLen = sizeof(signature);
+    ret = CalHAINFO(userID, userIDLen, masterPublicKey, masterPublicKeyLen, hashZa, &hashZaLen);
+    CHECK_RET(ret);
+    ret = CY_CLPKCSign(userPrivateKey, userPrivateKeyLen, hashZa, hashZaLen, keyReconstructionDataWa, keyReconstructionDataWaLen,
+                      extendedMessage, extendedMessageLen, signature, &signatureLen);
+    CHECK_RET(ret);
+
+    // 验证签名
+    ret = CY_CLPKCVerifySign(masterPublicKey, masterPublicKeyLen, userID, userIDLen, keyReconstructionDataWa, keyReconstructionDataWaLen, hashZa, hashZaLen, extendedMessage, extendedMessageLen, signature, signatureLen);
+    CHECK_RET(ret);
+    #endif 
+
+    // 加密
+    unsigned char inData[64] = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,\
+        0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01, 0x01, 0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,\
+        0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
+    unsigned int inDataLen = 64;
+    unsigned char encryptedData[256] = {0};
+    unsigned int encryptedDataLen = sizeof(encryptedData);
+    //ret = CY_CLPKCEncrypt(masterPublicKey, masterPublicKeyLen, userID, userIDLen, keyReconstructionDataWa, keyReconstructionDataWaLen, inData, inDataLen, encryptedData, &encryptedDataLen);
+    CHECK_RET(ret);
+    //cy_hex_dump("===>>>encryptedData", encryptedData, encryptedDataLen);
+    hex_dump_log("===>>>encryptedData", encryptedData, encryptedDataLen);
+    // 解密
+    unsigned char decryptedData[256] = {0};
+    unsigned int decryptedDataLen = sizeof(decryptedData);
+    unsigned char cipher[] = {0x30,0x81,0xa8,0x02,0x20,0x5a,0xdd,0x4a,0x71,0x32,0xb5,0xec,0xc9,0x37,0x0a,0xa6,0x35,
+        0xb8,0x95,0xc1,0x8c,0xbf,0x2d,0xd0,0x26,0xbc,0x7b,0xa8,0x30,0xe6,0x40,0xbd,0xf8,
+        0x3b,0x03,0x86,0x56,0x02,0x20,0x18,0x1d,0x62,0x12,0x9c,0xb0,0xbe,0xdb,0xa3,0x65,
+        0xd1,0xd5,0x62,0x9b,0xf4,0xd7,0xa2,0xc9,0xad,0x44,0x35,0x3b,0x70,0x82,0x0f,0x66,
+        0x74,0xeb,0xda,0x15,0x60,0x1d,0x04,0x20,0x26,0x98,0x42,0x86,0xd2,0x89,0xc4,0xa9,
+        0x26,0xfd,0x2f,0x91,0x5f,0x1a,0x50,0xd2,0x5b,0x28,0x87,0x2a,0x0c,0xee,0x2f,0xe2,
+        0x52,0xd8,0xab,0x04,0xf3,0x51,0x03,0x94,0x04,0x40,0xfd,0x50,0xf0,0x16,0x9d,0x32,
+        0xa6,0xee,0xbd,0xd3,0x11,0x49,0x83,0x08,0x37,0xc5,0x8c,0xa1,0x60,0x31,0x9c,0xb4,
+        0xec,0x01,0x80,0x03,0x25,0x8d,0x96,0x00,0x6c,0xcc,0xbb,0x00,0x3b,0xe5,0xda,0xe9,
+        0x80,0x18,0x5f,0xf8,0x63,0x89,0x8c,0xf5,0x67,0x3b,0x45,0xc1,0xb7,0x67,0x63,0x54,
+        0x0f,0x67,0x80,0x69,0xbd,0xb7,0xb2,0xdc,0x3d,0x26};
+        unsigned char cipher_err[] = {0x30,0x81,0xa8,0x02,0x20,0x5a,0xdd,0x4a,0x71,0x32,0xb5,0xec,0xc9,0x37,0x0a,0xa6,0x35,
+            0xb8,0x95,0xc1,0x8c,0xbf,0x2d,0xd0,0x26,0xbc,0x7b,0xa8,0x30,0xe6,0x40,0xbd,0xf8,
+            0x3b,0x03,0x86,0x56,0x02,0x20,0x18,0x1d,0x62,0x12,0x9c,0xb0,0xbe,0xdb,0xa3,0x65,
+            0xd1,0xd5,0x62,0x9b,0xf4,0xd7,0xa2,0xc9,0xad,0x44,0x35,0x3b,0x70,0x82,0x0f,0x66,
+            0x74,0xeb,0xda,0x15,0x60,0x1d,0x04,0x20,0x26,0x98,0x42,0x86,0xd2,0x89,0xc4,0xa9,
+            0x26,0xfd,0x2f,0x91,0x5f,0x1a,0x50,0xd2,0x5b,0x28,0x87,0x2a,0x0c,0xee,0x2f,0xe2,
+            0x52,0xd8,0xab,0x04,0xf3,0x51,0x03,0x94,0x04,0x40,0xfd,0x50,0xf0,0x16,0x9d,0x32,
+            0xa6,0xee,0xbd,0xd3,0x11,0x49,0x83,0x08,0x37,0xc5,0x8c,0xa1,0x60,0x31,0x9c,0xb4,
+            0xec,0x01,0x80,0x03,0x25,0x8d,0x96,0x00,0x6c,0xcc,0xbb,0x00,0x3b,0xe5,0xda,0xe9,
+            0x80,0x18,0x5f,0xf8,0x63,0x89,0x8c,0xf5,0x67,0x3b,0x45,0xc1,0xb7,0x67,0x63,0x54,
+            0x0f,0x67,0x80,0x69,0xbd,0xb7,0xb2,0xdc,0x3d,0x27};
+    
+    unsigned char dA[32] ={0xc0,0x48,0x38,0x0b,0xbe,0x57,0x78,0x86,0xa9,0x05,0xd2,0x8e,0x55,0x43,0x3b,0x3a,0xca,
+        0x96,0x3e,0xf4,0x12,0xb0,0xf1,0x4c,0x9c,0x14,0x8d,0xa4,0x2a,0x71,0xad,0x4f};
+    int cipherLen = sizeof(cipher);
+    printf("cipherLen: %d\n", cipherLen);
+    if(flag == 1)
+    {
+        ret = CY_CLPKCDecrypt(userPrivateKey, userPrivateKeyLen, cipher, cipherLen, decryptedData, &decryptedDataLen);
+        //CHECK_RET(ret);
+        printf("Decrypted data length: %u\n" , decryptedDataLen);       
+    }
+    else if (flag == 2)
+    {
+        ret = CY_CLPKCDecrypt(userPrivateKey, userPrivateKeyLen, cipher_err, cipherLen, decryptedData, &decryptedDataLen);
+        //CHECK_RET(ret);
+        printf("Decrypted data length: %u\n" , decryptedDataLen);
+       
+    }
+    else if (flag == 3)
+    {
+        ret = CY_CLPKCDecrypt(dA, 32, cipher, cipherLen, decryptedData, &decryptedDataLen);
+        //CHECK_RET(ret);
+        printf("Decrypted data length: %u\n" , decryptedDataLen);
+
+    }
+
+    else
+    {
+        ret = CY_CLPKCDecrypt(userPrivateKey, userPrivateKeyLen, encryptedData, encryptedDataLen, decryptedData, &decryptedDataLen);
+
+    }
+    while(1)
+    {
+        sleep(1);
+        printf("Ctrl + C will exit\n");    
+    }
+    CHECK_RET(ret);
+    printf("===>>>>>%d\n", __LINE__);
+    printf("Decrypted data length: %u\n" , decryptedDataLen);
+    // 验证解密结果
+    if (decryptedDataLen != inDataLen || memcmp(inData, decryptedData, inDataLen) != 0) {
+        printf("Decryption failed\n");
+        return -1;
+    }
+
+    printf("All tests passed\n");
+    return 0;
+}

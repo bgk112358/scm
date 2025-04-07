@@ -1,0 +1,61 @@
+include(ExternalProject)
+
+# OPENSSL SOURCES
+set(PLOG_VERSION "1.1.10")
+set(PLOG_URL     "https://gitee.com/corccc/dependencies/raw/master/plog-${PLOG_VERSION}.zip")
+
+set(PACKAGE_BUILD ON)
+
+if (PACKAGE_BUILD)
+        set(PLOG_PROJECT_NAME "plog_fetched")
+        set(PLOG_FETCHED_DIR  "${CMAKE_BINARY_DIR}/${PLOG_PROJECT_NAME}")
+else()
+        set(PLOG_PROJECT_NAME "plog_fetched")
+        set(PLOG_FETCHED_DIR  "${CMAKE_BINARY_DIR}/lib")
+        message(STATUS "PLOG FETCHED DIR: ${PLOG_FETCHED_DIR}")
+endif()
+
+if (PACKAGE_BUILD)
+# Add ExternalProject
+ExternalProject_Add(
+        ${PLOG_PROJECT_NAME}
+        URL       ${PLOG_URL}
+#        URL_HASH  SHA256=fe6b5a312243363132a0ed31dae067d695a74b9782f70c2f360a24288485e5a7
+        PREFIX    ${PLOG_FETCHED_DIR}
+        UPDATE_COMMAND  ""
+        DOWNLOAD_NO_PROGRESS 0
+        DOWNLOAD_EXTRACT_TIMESTAMP True
+        BUILD_COMMAND   ""
+        INSTALL_COMMAND ""
+        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+        -DCMAKE_SYSROOT=${CMAKE_SYSROOT}
+)
+endif()
+
+# This is plog dependencies
+add_dependencies(dependencies_built plog_fetched)
+if (PACKAGE_BUILD)
+# Add include dirs and library path as properties of plog_external imported
+set_target_properties(
+        plog_external
+        PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES
+        "${PLOG_FETCHED_DIR}/src/${PLOG_PROJECT_NAME}/include")
+else()
+
+set_target_properties(
+        plog_external
+        PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES
+        "${CMAKE_SOURCE_DIR}/include"
+        )
+endif()
+
+unset(PLOG_VERSION)
+unset(PLOG_URL)
+unset(PLOG_PROJECT_NAME)
+unset(PLOG_FETCHED_DIR)

@@ -1,0 +1,25 @@
+# How to build dependencies backages
+
+## To build plog-1.1.10
+### $ only unzip
+### $ 
+
+
+## To build Tongsuo-8.3.3
+
+### $ cd Tongsuo-8.3.3
+### $ mkdir -p build && mkdir -p build/usr/local/ssl
+### $ ./config enable-ntls --prefix=/home/ubuntu/Documents/pki/zqy_gm/scm_bgk/dependencies/download/Tongsuo-8.3.3/build --openssldir=/home/ubuntu/Documents/pki/zqy_gm/scm_bgk/dependencies/download/Tongsuo-8.3.3/build/usr/local/ssl
+### $ make -j8
+### $ make install
+
+
+
+## To build google-test-1.12.1
+
+### $ cd googletest-release-1.12.1/build
+### $ cmake .. -DCMAKE_INSTALL_INCLUDEDIR=/home/ubuntu/Documents/pki/zqy_gm_20250324/scm_bgk_20250324/dependencies/download/googletest-release-1.12.1/build/include -DCMAKE_INSTALL_LIBDIR=/home/ubuntu/Documents/pki/zqy_gm_20250324/scm_bgk_20250324/dependencies/download/googletest-release-1.12.1/build/remove -DBUILD_SHARED_LIBS=ON
+### $ make -j8
+### $ make install
+
+

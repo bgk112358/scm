@@ -1,0 +1,52 @@
+include(ExternalProject)
+
+# OPENSSL SOURCES
+set(GOOGLETEST_VERSION "1.12.1")
+set(GOOGLETEST_URL
+        "https://gitee.com/corccc/dependencies/raw/master/googletest-release-${GOOGLETEST_VERSION}.tar.gz")
+
+# PROJECT INFO
+set(GOOGLETEST_PROJECT_NAME "googletest_fetched")
+set(GOOGLETEST_FETCHED_DIR "${CMAKE_BINARY_DIR}/${GOOGLETEST_PROJECT_NAME}")
+
+# Add ExternalProject
+ExternalProject_Add(
+        ${GOOGLETEST_PROJECT_NAME}
+        URL       ${GOOGLETEST_URL}
+        URL_HASH  ""
+        PREFIX    "${GOOGLETEST_FETCHED_DIR}"
+        BINARY_DIR "${GOOGLETEST_FETCHED_DIR}/install"
+        UPDATE_COMMAND ""
+        DOWNLOAD_NO_PROGRESS 0
+        DOWNLOAD_EXTRACT_TIMESTAMP True
+        CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX="${GOOGLETEST_FETCHED_DIR}/install"
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        CONFIGURE_COMMAND
+        BUILD_COMMAND make
+        INSTALL_COMMAND ""
+)
+
+# Add include dirs and library path as properties of googletest_external imported
+set(FETCHED_GOOGLETEST_INCLUDE
+        "${GOOGLETEST_FETCHED_DIR}/src/googletest_fetched/googletest/include"
+        )
+
+set(FETCHED_GOOGLETEST_LIB
+        "${GOOGLETEST_FETCHED_DIR}/install/lib/libgmock${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        "${GOOGLETEST_FETCHED_DIR}/install/lib/libgtest${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        )
+
+add_dependencies(googletest_external googletest_fetched)
+
+set_target_properties(
+        googletest_external
+        PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES
+        "${FETCHED_GOOGLETEST_INCLUDE}"
+        IMPORTED_LOCATION_LIBS
+        "${FETCHED_GOOGLETEST_LIB}")
+
+unset(OPENSSL_VERSION)
+unset(OPENSSL_URL)
+unset(OPENSSL_PROJECT_NAME)
