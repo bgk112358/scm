@@ -11,6 +11,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/pkcs11)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/datamgr)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/slotmgr)
 include_directories(${SQLITE3_INCLUDE_DIRS})
 
 set(SOURCE_COMMON
@@ -19,11 +20,23 @@ set(SOURCE_COMMON
         ${CMAKE_CURRENT_SOURCE_DIR}/common/MutexFactory.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/common/osmutex.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/common/UUID.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/Configuration.cpp
+)
+
+set(SOURCE_PKCS11
+        ${CMAKE_CURRENT_SOURCE_DIR}/pkcs11/P11Attributes.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/pkcs11/P11Objects.cpp
 )
 
 set(DATAMGR_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/datamgr/ByteString.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/datamgr/SecureMemoryRegistry.cpp
+)
+
+set(SLOTMGR_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/slotmgr/SlotManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/slotmgr/Token.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/slotmgr/Slot.cpp
 )
 
 set(SOURCE_FILES
@@ -51,4 +64,4 @@ include(FindSQLite3)
 LINK_LIBRARIES(${SQLITE3_LIBRARIES})
 
 # ADD_LIBRARY(${PROJECT_NAME} SHARED ${SOURCE_COMMON} ${DATAMGR_FILES} ${SOURCE_FILES})
-ADD_EXECUTABLE(${PROJECT_NAME} main.cpp ${DATAMGR_FILES} ${SOURCE_COMMON} ${SOURCE_FILES})
+ADD_EXECUTABLE(${PROJECT_NAME} main.cpp ${SOURCE_PKCS11} ${DATAMGR_FILES} ${SLOTMGR_FILES} ${SOURCE_COMMON} ${SOURCE_FILES})

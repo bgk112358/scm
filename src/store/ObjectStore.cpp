@@ -141,7 +141,7 @@ ObjectStoreToken* ObjectStore::newToken(const ByteString& label)
 	std::string tokenUUID = UUID::newUUID();
 
 	// Convert the UUID to a serial number
-	std::string serialNumber = tokenUUID.substr(19, 4) + tokenUUID.substr(24);
+	std::string serialNumber = tokenUUID.substr(18, 4) + tokenUUID.substr(22);
 	ByteString serial((const unsigned char*) serialNumber.c_str(), serialNumber.size());
 
 	// Create the token
