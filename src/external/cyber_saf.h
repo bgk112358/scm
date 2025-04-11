@@ -716,11 +716,6 @@ int CY_SAF_InternalExportPrivateKey(
         unsigned char *pucData,
         unsigned int  *uiDataLen);
 
-int CY_SAF_InternalGetUUID(
-        void *hAppHandle,
-        unsigned char *pucData,
-        unsigned int *uiDataLen);
-
 #ifdef __cplusplus
 };
 #endif

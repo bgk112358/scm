@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
 
     // Load the slot manager
 	SlotManager* slotManager = new SlotManager(objectStore);
-    Slot* slot = slotManager->getSlot(1ul);
+    Slot* slot = slotManager->getSlot(2ul);
 	if (slot == NULL) {
 		return CKR_SLOT_ID_INVALID;
 	}
@@ -357,7 +357,7 @@ int main(int argc, char** argv) {
     // Create Data Objects
     CK_OBJECT_HANDLE data_obj;
     CK_ATTRIBUTE data_templ[20];
-    CK_BYTE contents[] = "123456789abcdef";
+    CK_BYTE contents[] = "123456789abcdefghijk";
     CK_OBJECT_CLASS clazz = CKO_DATA;
     CK_BBOOL _true = TRUE;
     CK_BBOOL _false = FALSE;

@@ -848,14 +848,12 @@ int CY_SAF_ExportP12Certificate(
 {
     DCHECK_NUL(hAppHandle, pucContainerName, pcPassword, pucCertificate, uiCertificateLen);
     int rv = -1;
-    unsigned int uiContainerType;
     unsigned char *pucLocalCertificate = nullptr;
     unsigned int uiLocalCertificateLen = 0;
     unsigned char *pucLocalCertificateChain = nullptr;
     unsigned int uiLocalCertificateChainLen = 0;
     unsigned char ucPrivateKey[4096] = {0};
     unsigned int  uiPrivateKeyLen    = 4096;
-    char pcContainerPath[SGD_MAX_SIZE] = {0};
     auto handle = (Handler *)hAppHandle;
     FUNC_ENTRY;
     FUNC_PARAMETER(pucContainerName);

@@ -13,6 +13,7 @@
 file(STRINGS "../src/VERSION" LIB_VERSION)
 
 include_directories(include)
+include_directories(include/openssl)
 
 include_directories(${CYBERLIB_INCLUDE_DIR})
 set(CMAKE_INSTALL_RPATH "${CYBERLIB_BINARY_DIR}")

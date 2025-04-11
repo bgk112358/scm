@@ -8,6 +8,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(runTests CXX)
 
+# GOOGLE TEST
+# add_custom_target(googletest_external)
+# add_subdirectory(googletest)
+
 get_target_property(
         GOOGLETEST_IMPORTED_LOCATION_LIBS
         googletest_external

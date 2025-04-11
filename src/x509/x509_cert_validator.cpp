@@ -50,6 +50,7 @@ util::Status VerifyDeviceCert(
     if (crls) {
         X509_STORE_CTX_set0_crls(ctx, crls);
     }
+
     // Check Certificate
     if (X509_verify_cert(ctx) <= 0) {
         code = X509_STORE_CTX_get_error(ctx);

@@ -11,6 +11,7 @@
 #include <openssl/engine.h>
 #include "crypto/asymmetric_key.h"
 #include "util/path_utils.h"
+#include "x509/x509_certificate.h"
 #include "cyber_engine.h"
 
 using namespace cyber;
@@ -28,7 +29,8 @@ int CY_SAF_GetSSLContext(
     unsigned char pucData[2048] = {0};
     unsigned int uiCertificateLen = 8192, uiDataLen = 2048, uiAlgorithm = 0;
     unsigned char *pucCertificate = nullptr;
-    std::shared_ptr<IKeyPair> iKeyPair;
+    std::shared_ptr<IKeyPair> signKeyPair;
+    std::shared_ptr<IKeyPair> encKeyPair;
     std::vector<unsigned char> vPrivateKey;
     ENGINE *pEngine = nullptr;
     EVP_PKEY *pkey  = nullptr;
@@ -82,32 +84,55 @@ int CY_SAF_GetSSLContext(
         rv = error::Code::UnknownErr;
         goto cleanup;
     }
-    uiCertificateLen = 8192;
     // Sign Certificate
+    uiCertificateLen = 8192;
     rv = CY_SAF_ExportCertificate(
             hAppHandle,
             pucContainerName,
             uiContainerNameLen,
-            SGD_KEYUSAGE_SIGN,
+            1,
             pucCertificate,
             &uiCertificateLen);
     if (rv != error::Code::Ok) {
         LOGM(ERROR, "ExportCertificate fail, fail code:" + std::to_string(rv));
         goto cleanup;
     }
-    // Enc Certificate
-    SSL_CTX_set_verify(context, SSL_VERIFY_NONE, nullptr);
-    uiCertificateLen = 8192;
     {
-        const unsigned char *pp = pucCertificate;
-        X509 *x509 = d2i_X509(nullptr, &pp, uiCertificateLen);
-        rv = SSL_CTX_use_sign_certificate(context, x509);
+        std::string sCert = std::string(
+                reinterpret_cast<const char*>(pucCertificate),
+                uiCertificateLen);
+        std::unique_ptr<X509Certificate> x509Certificate = X509Certificate::CreateFromBytes(sCert);
+        rv = SSL_CTX_use_certificate(context, x509Certificate->value());
         if (rv != 1) {
-            LOGM(ERROR, "SSL_CTX_use_certificate fail, fail code:" + std::to_string(rv));
+            LOGM(ERROR, "SSL_CTX_use_sign_certificate fail, fail code:" + std::to_string(rv));
+            ERR_print_errors_fp(stdout);
             rv = error::Code::CertEncodeErr;
             goto cleanup;
         }
     }
+    // Enc Certificate
+    uiCertificateLen = 8192;
+    rv = CY_SAF_ExportCertificate(
+            hAppHandle,
+            pucContainerName,
+            uiContainerNameLen,
+            0,
+            pucCertificate,
+            &uiCertificateLen);
+    if (rv == error::Code::Ok) {
+        uiCertificateLen = 8192;
+        std::string sCert = std::string(
+                reinterpret_cast<const char*>(pucCertificate),
+                uiCertificateLen);
+        std::unique_ptr<X509Certificate> x509Certificate = X509Certificate::CreateFromBytes(sCert);
+        rv = SSL_CTX_use_enc_certificate(context, x509Certificate->value());
+        if (rv != 1) {
+            LOGM(ERROR, "SSL_CTX_use_enc_certificate fail, fail code:" + std::to_string(rv));
+            rv = error::Code::CertEncodeErr;
+            goto cleanup;
+        }
+    }
+    // Sign PrivateKey
     rv = CY_SAF_InternalExportPrivateKey(
             handle,
             pucContainerName,
@@ -121,19 +146,19 @@ int CY_SAF_GetSSLContext(
         goto cleanup;
     }
     // Just for get EVP_PKEY, never mind the algorithm.
-    iKeyPair = AsymmetricKey::CreateKeyPair("RSA");
-    if (iKeyPair == nullptr) {
+    signKeyPair = AsymmetricKey::CreateKeyPair("SM2");
+    if (signKeyPair == nullptr) {
         LOGM(ERROR, "Unsupport Algorithm:" << std::hex << uiAlgorithm);
         goto cleanup;
     }
     vPrivateKey.assign(pucData, pucData + uiDataLen);
-    if (!iKeyPair->ImportDerPrivateKey(vPrivateKey) &&
-        !iKeyPair->ImportDerPublicKey(vPrivateKey)) {
+    if (!signKeyPair->ImportDerPrivateKey(vPrivateKey) &&
+        !signKeyPair->ImportDerPublicKey(vPrivateKey)) {
         LOGM(ERROR, "ImportDerKey fail.");
         rv = error::Code::KeyEncodeErr;
         goto cleanup;
     }
-    pkey = iKeyPair->GetPrivateKey();
+    pkey = signKeyPair->GetPrivateKey();
     if (pkey == nullptr) {
         LOGM(ERROR, "KeyPair Get pkey fail");
         rv = error::Code::KeyNotFoundErr;
@@ -146,11 +171,48 @@ int CY_SAF_GetSSLContext(
         }
         EVP_PKEY_set1_engine(pkey, nullptr);
     }
-    rv = SSL_CTX_use_PrivateKey(context, pkey);
+    rv = SSL_CTX_use_sign_PrivateKey(context, pkey);
     if (rv != 1) {
         LOGM(ERROR, "SSL_CTX_use_PrivateKey fail.");
         rv = error::Code::UnknownErr;
         goto cleanup;
+    }
+
+    // Enc PrivateKey
+    rv = CY_SAF_InternalExportPrivateKey(
+            handle,
+            pucContainerName,
+            uiContainerNameLen,
+            0,
+            &uiAlgorithm,
+            pucData,
+            &uiDataLen);
+    if (rv == error::Code::Ok) {
+        // Just for get EVP_PKEY, never mind the algorithm.
+        encKeyPair = AsymmetricKey::CreateKeyPair("SM2");
+        if (encKeyPair == nullptr) {
+            LOGM(ERROR, "Unsupport Algorithm:" << std::hex << uiAlgorithm);
+            goto cleanup;
+        }
+        vPrivateKey.assign(pucData, pucData + uiDataLen);
+        if (!encKeyPair->ImportDerPrivateKey(vPrivateKey) &&
+            !encKeyPair->ImportDerPublicKey(vPrivateKey)) {
+            LOGM(ERROR, "ImportDerKey fail.");
+            rv = error::Code::KeyEncodeErr;
+            goto cleanup;
+        }
+        pkey = encKeyPair->GetPrivateKey();
+        if (pkey == nullptr) {
+            LOGM(ERROR, "KeyPair Get pkey fail");
+            rv = error::Code::KeyNotFoundErr;
+            goto cleanup;
+        }
+        rv = SSL_CTX_use_enc_PrivateKey(context, pkey);
+        if (rv != 1) {
+            LOGM(ERROR, "SSL_CTX_use_PrivateKey fail.");
+            rv = error::Code::UnknownErr;
+            goto cleanup;
+        }
     }
     *ctx = context;
     rv = error::Code::Ok;

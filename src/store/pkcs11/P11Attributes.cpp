@@ -57,12 +57,12 @@ P11Attribute::~P11Attribute()
 CK_RV P11Attribute::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pValue, CK_ULONG ulValueLen, int /*op*/)
 {
 	ByteString value;
-	// if (isPrivate)
-	// {
-	// 	if (!token->encrypt(ByteString((unsigned char*)pValue, ulValueLen),value))
-	// 		return CKR_GENERAL_ERROR;
-	// }
-	// else
+	if (isPrivate)
+	{
+		if (!token->encrypt(ByteString((unsigned char*)pValue, ulValueLen),value))
+			return CKR_GENERAL_ERROR;
+	}
+	else
 		value = ByteString((unsigned char*)pValue, ulValueLen);
 	if (value.size() < ulValueLen)
 		return CKR_GENERAL_ERROR;
@@ -275,17 +275,17 @@ CK_RV P11Attribute::retrieve(Token *token, bool isPrivate, CK_VOID_PTR pValue, C
 		// Lower level attribute has to be variable sized.
 		if (attr.isByteStringAttribute())
 		{
-			// if (isPrivate && attr.getByteStringValue().size() != 0)
-			// {
-			// 	ByteString value;
-			// 	if (!token->decrypt(attr.getByteStringValue(),value))
-			// 	{
-			// 		ERROR_MSG("Internal error: failed to decrypt private attribute value");
-			// 		return CKR_GENERAL_ERROR;
-			// 	}
-			// 	attrSize = value.size();
-			// }
-			// else
+			if (isPrivate && attr.getByteStringValue().size() != 0)
+			{
+				ByteString value;
+				if (!token->decrypt(attr.getByteStringValue(),value))
+				{
+					ERROR_MSG("Internal error: failed to decrypt private attribute value");
+					return CKR_GENERAL_ERROR;
+				}
+				attrSize = value.size();
+			}
+			else
 				attrSize = attr.getByteStringValue().size();
 		}
 		else if (attr.isMechanismTypeSetAttribute())
@@ -334,21 +334,20 @@ CK_RV P11Attribute::retrieve(Token *token, bool isPrivate, CK_VOID_PTR pValue, C
 		}
 		else if (attr.isByteStringAttribute())
 		{
-			// if (isPrivate && attr.getByteStringValue().size() != 0)
-			// {
-			// 	ByteString value;
-			// 	if (!token->decrypt(attr.getByteStringValue(),value))
-			// 	{
-			// 		ERROR_MSG("Internal error: failed to decrypt private attribute value");
-			// 		return CKR_GENERAL_ERROR;
-			// 	}
-			// 	if (value.size() !=  0) {
-			// 		const unsigned char* attrPtr = value.const_byte_str();
-			// 		memcpy(pValue,attrPtr,attrSize);
-			// 	}
-			// }
-			// else 
-			if (attr.getByteStringValue().size() != 0)
+			if (isPrivate && attr.getByteStringValue().size() != 0)
+			{
+				ByteString value;
+				if (!token->decrypt(attr.getByteStringValue(),value))
+				{
+					ERROR_MSG("Internal error: failed to decrypt private attribute value");
+					return CKR_GENERAL_ERROR;
+				}
+				if (value.size() !=  0) {
+					const unsigned char* attrPtr = value.const_byte_str();
+					memcpy(pValue,attrPtr,attrSize);
+				}
+			}
+			else if (attr.getByteStringValue().size() != 0)
 			{
 				const unsigned char* attrPtr = attr.getByteStringValue().const_byte_str();
 				memcpy(pValue,attrPtr,attrSize);
@@ -834,12 +833,12 @@ CK_RV P11AttrCheckValue::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pV
 
 	// Encrypt
 
-	// if (isPrivate)
-	// {
-	// 	if (!token->encrypt(plaintext, value))
-	// 		return CKR_GENERAL_ERROR;
-	// }
-	// else
+	if (isPrivate)
+	{
+		if (!token->encrypt(plaintext, value))
+			return CKR_GENERAL_ERROR;
+	}
+	else
 		value = plaintext;
 
 	// Attribute specific checks
@@ -856,15 +855,15 @@ CK_RV P11AttrCheckValue::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pV
 	{
 		ByteString checkValue;
 		ByteString keybits;
-		// if (isPrivate)
-		// {
-		// 	if (!token->decrypt(osobject->getByteStringValue(CKA_VALUE), keybits))
-		// 		return CKR_GENERAL_ERROR;
-		// }
-		// else
-		// {
+		if (isPrivate)
+		{
+			if (!token->decrypt(osobject->getByteStringValue(CKA_VALUE), keybits))
+				return CKR_GENERAL_ERROR;
+		}
+		else
+		{
 			keybits = osobject->getByteStringValue(CKA_VALUE);
-		// }
+		}
 
 		// SymmetricKey key;
 		// AESKey aes;
@@ -961,12 +960,12 @@ CK_RV P11AttrValue::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pValue,
 
 	// Encrypt
 
-	// if (isPrivate)
-	// {
-	// 	if (!token->encrypt(plaintext, value))
-	// 		return CKR_GENERAL_ERROR;
-	// }
-	// else
+	if (isPrivate)
+	{
+		if (!token->encrypt(plaintext, value))
+			return CKR_GENERAL_ERROR;
+	}
+	else
 		value = plaintext;
 
 	// Attribute specific checks
@@ -997,7 +996,7 @@ CK_RV P11AttrValue::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pValue,
 		}
 	}
 
-	// Calculate the CKA_CHECK_VALUE for certificates
+	// // Calculate the CKA_CHECK_VALUE for certificates
 	// if (osobject->getUnsignedLongValue(CKA_CLASS, CKO_VENDOR_DEFINED) == CKO_CERTIFICATE)
 	// {
 	// 	HashAlgorithm* hash = CryptoFactory::i()->getHashAlgorithm(HashAlgo::SHA1);
@@ -1027,7 +1026,7 @@ CK_RV P11AttrValue::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pValue,
 	// 		osobject->setAttribute(CKA_CHECK_VALUE, digest);
 	// }
 
-	// Calculate the CKA_CHECK_VALUE for secret keys
+	// // Calculate the CKA_CHECK_VALUE for secret keys
 	// if (op == OBJECT_OP_CREATE &&
 	//     osobject->getUnsignedLongValue(CKA_CLASS, CKO_VENDOR_DEFINED) == CKO_SECRET_KEY)
 	// {
@@ -1951,12 +1950,12 @@ CK_RV P11AttrModulus::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pValu
 
 	// Encrypt
 
-	// if (isPrivate)
-	// {
-	// 	if (!token->encrypt(plaintext, value))
-	// 		return CKR_GENERAL_ERROR;
-	// }
-	// else
+	if (isPrivate)
+	{
+		if (!token->encrypt(plaintext, value))
+			return CKR_GENERAL_ERROR;
+	}
+	else
 		value = plaintext;
 
 	// Attribute specific checks
@@ -2108,12 +2107,12 @@ CK_RV P11AttrPrime::updateAttr(Token *token, bool isPrivate, CK_VOID_PTR pValue,
 
 	// Encrypt
 
-	// if (isPrivate)
-	// {
-	// 	if (!token->encrypt(plaintext, value))
-	// 		return CKR_GENERAL_ERROR;
-	// }
-	// else
+	if (isPrivate)
+	{
+		if (!token->encrypt(plaintext, value))
+			return CKR_GENERAL_ERROR;
+	}
+	else
 		value = plaintext;
 
 	// Attribute specific checks

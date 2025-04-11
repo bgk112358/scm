@@ -565,9 +565,11 @@ bool Token::decrypt(const ByteString &encrypted, ByteString &plaintext)
 	MutexLocker lock(tokenMutex);
 
 	// if (sdm == NULL) return false;
-
 	// return sdm->decrypt(encrypted,plaintext);
 
+	// Wipe plaintext data block
+	plaintext.wipe();
+	plaintext += encrypted;
 	return true;
 }
 
@@ -577,8 +579,10 @@ bool Token::encrypt(const ByteString &plaintext, ByteString &encrypted)
 	MutexLocker lock(tokenMutex);
 
 	// if (sdm == NULL) return false;
-
 	// return sdm->encrypt(plaintext,encrypted);
 
+	// Wipe encrypted data block
+	encrypted.wipe();
+	encrypted += plaintext;
 	return true;
 }

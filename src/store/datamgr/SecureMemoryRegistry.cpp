@@ -93,7 +93,7 @@ void SecureMemoryRegistry::add(void* pointer, size_t blocksize)
 // Unregister a block of memory
 size_t SecureMemoryRegistry::remove(void* pointer)
 {
-	//DEBUG_MSG("Unregistered block of %d bytes at 0x%x", registry[pointer], pointer);
+	DEBUG_MSG("Unregistered block of %d bytes at 0x%x", registry[pointer], pointer);
 
 	MutexLocker lock(SecMemRegistryMutex);
 

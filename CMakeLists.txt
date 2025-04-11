@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ---------------------------- Compile parameter ----------------------------
 option(BUILD_SHARED           "Build as shared library"                  ON)
-option(ENABLE_GOOGLE_TEST     "Enable unit test using GoogleTest"        OFF)
+option(ENABLE_GOOGLE_TEST     "Enable unit test using GoogleTest"        ON)
 option(ENABLE_SANITIZE        "Whether support sanitize"                 OFF)
 option(ENABLE_ENGINE          "Enable USE ENGINE"                        OFF)
 
@@ -35,12 +35,6 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/lib)
-# ---------------------------- Parameter Configure ----------------------------
-# Google Test
-if (ENABLE_GOOGLE_TEST)
-    message(STATUS "Build unitest target.")
-    add_subdirectory(${CYBERLIB_UNITEST_DIR})
-endif (ENABLE_GOOGLE_TEST)
 
 # Sanitize
 if (ENABLE_SANITIZE)
@@ -70,4 +64,10 @@ endif ()
 add_subdirectory(dependencies)
 add_subdirectory(src)
 add_subdirectory(examples)
-add_subdirectory(unitest)
+
+# ---------------------------- Parameter Configure ----------------------------
+# Google Test
+if (ENABLE_GOOGLE_TEST)
+    message(STATUS "Build unitest target.")
+    add_subdirectory(${CYBERLIB_UNITEST_DIR})
+endif (ENABLE_GOOGLE_TEST)

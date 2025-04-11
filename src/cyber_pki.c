@@ -830,6 +830,44 @@ cleanup:
     return rv;
 }
 
+int CY_ImportEccKeyPair(
+        void  *hAppHandle,
+        unsigned char *pucContainerName,
+        unsigned int   uiContainerNameLen,
+        unsigned char *pucPin,
+        unsigned int   uiPinLen,
+        unsigned int   uiAlgorithmID,
+        unsigned int   uiSignFlag,
+        unsigned char *pucKeyPair,
+        unsigned int   uiKeyPairLen)
+{
+    CY_Lock(0);
+    unsigned int puiRemainCount = 0;
+    int rv = CY_SAF_Login(
+            hAppHandle,
+            0,
+            pucContainerName,
+            uiContainerNameLen,
+            pucPin,
+            uiPinLen,
+            &puiRemainCount);
+    if (rv != CYBER_R_SUCCESS) {
+        goto cleanup;
+    }
+    rv = CY_SAF_ImportEccPrivateKey(
+            hAppHandle,
+            pucContainerName,
+            uiContainerNameLen,
+            uiAlgorithmID,
+            uiSignFlag,
+            pucKeyPair,
+            uiKeyPairLen);
+cleanup:
+    CY_SAF_Logout(hAppHandle, 0);
+    CY_UnLock(0);
+    return rv;
+}
+
 int CY_GetEccPublicKey(
         void *hAppHandle,
         unsigned char *pucContainerName,

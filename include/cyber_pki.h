@@ -232,6 +232,7 @@ int CY_GetCertificateInfo(
         unsigned int uiInfoType,
         unsigned char *pucInfo,
         unsigned int *puiInfoLen);
+
 /* ******************************************
       Cryptographic algorithm interface
  ****************************************** */
@@ -757,6 +758,32 @@ CY_GenEccKeyPair(
         unsigned int uiAlgorithmID,
         unsigned int uiKeyUsage,
         unsigned int uiExportFlag);
+
+/**
+ * 导入 ECC 密钥对
+ *
+ * @param hAppHandle         [IN] 应用接口句柄
+ * @param pucContainerName   [IN] 容器名称
+ * @param uiContainerNameLen [IN] 容器名称长度
+ * @param pucPin             [IN] 设备口令
+ * @param uiPinLen           [IN] 设备口令长度
+ * @param uiAlgorithmID      [IN] 密钥标识 SGD_SM2, SGD_ECC, SGD_ED25519
+ * @param uiKeyUsage         [IN] 1 表示签名密钥，0 表示加密密钥
+ * @param pucKeyPair         [IN] 密钥对
+ * @param uiKeyPairLen       [IN] 密钥对长度
+ * @return 0 成功 / 非 0 失败，返回错误码
+ */
+CY_EXPORT int
+CY_ImportEccKeyPair(
+        void  *hAppHandle,
+        unsigned char *pucContainerName,
+        unsigned int   uiContainerNameLen,
+        unsigned char *pucPin,
+        unsigned int   uiPinLen,
+        unsigned int   uiAlgorithmID,
+        unsigned int   uiKeyUsage,
+        unsigned char *pucKeyPair,
+        unsigned int   uiKeyPairLen);
 
 /**
  * @brief 获取 ECC 公钥
